@@ -76,7 +76,7 @@
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
     const urlParams = new URLSearchParams(window.location.search)
-    const program = urlParams.get('program') || '1'
+   const program = urlParams.get('program') || '1'
     const currentId = urlParams.get('current') || '1'
 
     const supabase = createClient(
