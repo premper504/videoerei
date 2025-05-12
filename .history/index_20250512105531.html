@@ -152,35 +152,34 @@
 
       // Generar previews para la lista
       for (const item of items) {
-        const div = document.createElement('div')
-        div.className = 'related-item'
-        div.onclick = () => {
-            const newUrl = `${window.location.pathname}?program=${program}&current=${item.id}`
-            window.location.href = newUrl
-        }
+  const div = document.createElement('div')
+  div.className = 'related-item'
+  div.onclick = () => {
+    const newUrl = `${window.location.pathname}?program=${program}&current=${item.id}`
+    window.location.href = newUrl
+  }
 
-        const previewImg = document.createElement('img')
-        previewImg.style.background = '#000'
-        previewImg.alt = 'Preview'
+  const previewImg = document.createElement('img')
+  previewImg.style.background = '#000'
+  previewImg.alt = 'Preview'
 
-        const texts = document.createElement('div')
-        texts.className = 'related-texts'
-        texts.innerHTML = `
-            <div class="name">${item.name}</div>
-            <div class="duration">Cargando duración...</div>
-        `
+  const texts = document.createElement('div')
+  texts.className = 'related-texts'
+  texts.innerHTML = `
+    <div class="name">${item.name}</div>
+    <div class="duration">Cargando duración...</div>
+  `
 
-        div.appendChild(previewImg)
-        div.appendChild(texts)
-        listEl.appendChild(div)
+  div.appendChild(previewImg)
+  div.appendChild(texts)
+  listEl.appendChild(div)
 
-        // Procesar preview de forma asíncrona sin bloquear el render inicial
-        getPreviewAndDuration(item.url_video).then(({ preview, duration }) => {
-            previewImg.src = preview
-            texts.querySelector('.duration').innerText = `Duración: ${formatDuration(duration)}`
-        })
-        }
-      }
+  // Procesar preview de forma asíncrona sin bloquear el render inicial
+  getPreviewAndDuration(item.url_video).then(({ preview, duration }) => {
+    previewImg.src = preview
+    texts.querySelector('.duration').innerText = `Duración: ${formatDuration(duration)}`
+  })
+}
 
     const formatDuration = (seconds) => {
       if (!seconds || isNaN(seconds)) return 'N/A'

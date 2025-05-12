@@ -152,35 +152,26 @@
 
       // Generar previews para la lista
       for (const item of items) {
+        const { preview, duration } = await getPreviewAndDuration(item.url_video)
+
         const div = document.createElement('div')
         div.className = 'related-item'
         div.onclick = () => {
-            const newUrl = `${window.location.pathname}?program=${program}&current=${item.id}`
-            window.location.href = newUrl
+          const newUrl = `${window.location.pathname}?program=${program}&current=${item.id}`
+          window.location.href = newUrl
         }
 
-        const previewImg = document.createElement('img')
-        previewImg.style.background = '#000'
-        previewImg.alt = 'Preview'
-
-        const texts = document.createElement('div')
-        texts.className = 'related-texts'
-        texts.innerHTML = `
+        div.innerHTML = `
+          <img src="${preview}" alt="Preview" />
+          <div class="related-texts">
             <div class="name">${item.name}</div>
-            <div class="duration">Cargando duración...</div>
+            <div class="duration">Duración: ${formatDuration(duration)}</div>
+          </div>
         `
 
-        div.appendChild(previewImg)
-        div.appendChild(texts)
         listEl.appendChild(div)
-
-        // Procesar preview de forma asíncrona sin bloquear el render inicial
-        getPreviewAndDuration(item.url_video).then(({ preview, duration }) => {
-            previewImg.src = preview
-            texts.querySelector('.duration').innerText = `Duración: ${formatDuration(duration)}`
-        })
-        }
       }
+    }
 
     const formatDuration = (seconds) => {
       if (!seconds || isNaN(seconds)) return 'N/A'
