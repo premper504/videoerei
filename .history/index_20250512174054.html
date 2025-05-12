@@ -3,8 +3,6 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <script src="https://code.iconify.design/iconify-icon/1.0.7/iconify-icon.min.js"></script>
-
   <title>Erei</title>
   <style>
     body {
@@ -24,13 +22,13 @@
     }
 
     .video-info {
-    display: flex;
-    gap: 20px;
-    margin-top: 8px;
-    font-size: 0.9em;
-    color: #555;
-    align-items: center;
-    }
+  display: flex;
+  gap: 20px;
+  margin-top: 8px;
+  font-size: 0.9em;
+  color: #555;
+  align-items: center;
+}
 
         .video-info span {
         display: flex;
@@ -223,18 +221,16 @@
 
         videoElement.src = currentItem.url_video
         titleEl.innerText = currentItem.name
-     
         document.getElementById('mainInfo').innerHTML = `
-            <span>
-                <iconify-icon icon="mdi:clock-time-four-outline" style="font-size:16px;"></iconify-icon>
-                Duración: ${formatDuration(currentItem.duration)}
-            </span>
-            <span>
-                <iconify-icon icon="mdi:arm-flex-outline" style="font-size:16px;"></iconify-icon>
-                Dificultad: ${currentItem.dificult || 'N/A'}
-            </span>
-            `
-
+        <span>
+            <svg viewBox="0 0 24 24"><path d="M12 20a8 8 0 1 1 8-8 8.009 8.009 0 0 1-8 8Zm0-14a6 6 0 1 0 6 6 6.006 6.006 0 0 0-6-6Zm.5 6.5V8h-1v5h4v-1Z"/></svg>
+            Duración: ${formatDuration(currentItem.duration)}
+        </span>
+        <span>
+            <svg viewBox="0 0 24 24"><path d="M20.285 15.707 15 20.993V22h-2v-2h-2v2H9v-2H7a1 1 0 0 1-1-1v-2.586l-1.293-1.293A1 1 0 0 1 4 14V6a1 1 0 0 1 1-1h2V3h2v2h2V3h2v2h2a1 1 0 0 1 1 1v8a1 1 0 0 1-.293.707L13 17.414V19h.586l5.7-5.707a1 1 0 0 1 1.414 1.414Z"/></svg>
+            Dificultad: ${currentItem.dificultad || 'N/A'}
+        </span>
+        `
 
         for (const item of items) {
             const div = document.createElement('div')
@@ -249,15 +245,14 @@
                 videoElement.src = item.url_video
                 titleEl.innerText = item.name
                 await videoElement.play()
-                
                 document.getElementById('mainInfo').innerHTML = `
                     <span>
-                        <iconify-icon icon="mdi:clock-time-four-outline" style="font-size:16px;"></iconify-icon>
-                        Duración: ${formatDuration(currentItem.duration)}
+                        <svg viewBox="0 0 24 24"><path d="M12 20a8 8 0 1 1 8-8 8.009 8.009 0 0 1-8 8Zm0-14a6 6 0 1 0 6 6 6.006 6.006 0 0 0-6-6Zm.5 6.5V8h-1v5h4v-1Z"/></svg>
+                        Duración: ${formatDuration(item.duration)}
                     </span>
                     <span>
-                        <iconify-icon icon="mdi:arm-flex-outline" style="font-size:16px;"></iconify-icon>
-                        Dificultad: ${currentItem.dificult || 'N/A'}
+                        <svg viewBox="0 0 24 24"><path d="M20.285 15.707 15 20.993V22h-2v-2h-2v2H9v-2H7a1 1 0 0 1-1-1v-2.586l-1.293-1.293A1 1 0 0 1 4 14V6a1 1 0 0 1 1-1h2V3h2v2h2V3h2v2h2a1 1 0 0 1 1 1v8a1 1 0 0 1-.293.707L13 17.414V19h.586l5.7-5.707a1 1 0 0 1 1.414 1.414Z"/></svg>
+                        Dificultad: ${item.dificultad || 'N/A'}
                     </span>
                     `
 

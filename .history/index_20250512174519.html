@@ -249,18 +249,17 @@
                 videoElement.src = item.url_video
                 titleEl.innerText = item.name
                 await videoElement.play()
-                
                 document.getElementById('mainInfo').innerHTML = `
-                    <span>
-                        <iconify-icon icon="mdi:clock-time-four-outline" style="font-size:16px;"></iconify-icon>
-                        Duración: ${formatDuration(currentItem.duration)}
-                    </span>
-                    <span>
-                        <iconify-icon icon="mdi:arm-flex-outline" style="font-size:16px;"></iconify-icon>
-                        Dificultad: ${currentItem.dificult || 'N/A'}
-                    </span>
-                    `
-
+               document.getElementById('mainInfo').innerHTML = `
+            <span>
+                <iconify-icon icon="mdi:clock-time-four-outline" style="font-size:16px;"></iconify-icon>
+                Duración: ${formatDuration(currentItem.duration)}
+            </span>
+            <span>
+                <iconify-icon icon="mdi:arm-flex-outline" style="font-size:16px;"></iconify-icon>
+                Dificultad: ${currentItem.dificult || 'N/A'}
+            </span>
+            `
                 // Actualizar clases visuales
                 relatedItemsRefs.forEach(ref => {
                 ref.el.classList.toggle('active', ref.id == item.id)
