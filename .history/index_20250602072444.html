@@ -158,7 +158,7 @@
 
             tempVideo.addEventListener('loadedmetadata', () => {
             const duration = tempVideo.duration || 0
-            const captureTime = Math.min(5, duration * 0.6)
+            const captureTime = Math.min(5, duration  * 0.6)
             tempVideo.currentTime = captureTime
             })
 
