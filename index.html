@@ -156,45 +156,118 @@
             tempVideo.playsInline = true
             tempVideo.preload = 'metadata'
 
+            let hasResolved = false
+            
+            const resolveOnce = (result) => {
+                if (!hasResolved) {
+                    hasResolved = true
+                    resolve(result)
+                }
+            }
+
             tempVideo.addEventListener('loadedmetadata', () => {
-            const duration = tempVideo.duration || 0
-            const captureTime = Math.min(5, duration * 0.6)
-            tempVideo.currentTime = captureTime
+                console.log('Video metadata loaded:', videoUrl)
+                const duration = tempVideo.duration || 0
+                if (duration === 0) {
+                    console.warn('Duration is 0 for:', videoUrl)
+                    resolveOnce({ preview: '', duration: 0 })
+                    return
+                }
+                
+                // Esperar un poco más antes de hacer seek
+                setTimeout(() => {
+                    const captureTime = Math.min(10, duration * 0.1) // Capturar más temprano
+                    console.log(`Setting currentTime to ${captureTime} for video of ${duration}s`)
+                    tempVideo.currentTime = captureTime
+                }, 500)
             })
 
             tempVideo.addEventListener('seeked', () => {
-            canvas.width = 320
-            canvas.height = 180
-            ctx.drawImage(tempVideo, 0, 0, canvas.width, canvas.height)
-            const preview = canvas.toDataURL('image/jpeg')
-            const duration = tempVideo.duration
-            resolve({ preview, duration })
+                console.log('Video seeked, capturing frame...')
+                
+                // Verificar que el video tenga dimensiones
+                if (tempVideo.videoWidth === 0 || tempVideo.videoHeight === 0) {
+                    console.warn('Video has no dimensions:', videoUrl)
+                    resolveOnce({ preview: '', duration: tempVideo.duration || 0 })
+                    return
+                }
+
+                try {
+                    canvas.width = 320
+                    canvas.height = 180
+                    
+                    // Limpiar canvas antes de dibujar
+                    ctx.clearRect(0, 0, canvas.width, canvas.height)
+                    
+                    // Dibujar el video en el canvas
+                    ctx.drawImage(tempVideo, 0, 0, canvas.width, canvas.height)
+                    
+                    const preview = canvas.toDataURL('image/jpeg', 0.8)
+                    const duration = tempVideo.duration
+                    
+                    console.log('Preview generated successfully for:', videoUrl)
+                    resolveOnce({ preview, duration })
+                    
+                } catch (error) {
+                    console.error('Error capturing frame:', error, videoUrl)
+                    resolveOnce({ preview: '', duration: tempVideo.duration || 0 })
+                }
             })
 
+            tempVideo.addEventListener('error', (e) => {
+                console.error('Video error:', e, videoUrl)
+                resolveOnce({ preview: '', duration: 0 })
+            })
+
+            tempVideo.addEventListener('canplay', () => {
+                console.log('Video canplay:', videoUrl)
+                // Si por alguna razón no se disparó seeked, intentar capturar aquí
+                setTimeout(() => {
+                    if (!hasResolved && tempVideo.readyState >= 2) {
+                        const duration = tempVideo.duration || 0
+                        if (duration > 0) {
+                            tempVideo.currentTime = Math.min(5, duration * 0.1)
+                        }
+                    }
+                }, 1000)
+            })
+
+            // Timeout más largo para videos que tardan en cargar
             setTimeout(() => {
-            resolve({ preview: '', duration: 0 })
-            }, 8000)
+                if (!hasResolved) {
+                    console.warn('Timeout reached for:', videoUrl)
+                    resolveOnce({ preview: '', duration: 0 })
+                }
+            }, 15000) // 15 segundos de timeout
+            
+            // Iniciar la carga
+            tempVideo.load()
         })
         }
 
         const uploadPreviewToStorage = async (base64Image, fileName) => {
-        const base64Data = base64Image.split(',')[1]
-        const file = new Blob([Uint8Array.from(atob(base64Data), c => c.charCodeAt(0))], { type: 'image/jpeg' })
+        try {
+            const base64Data = base64Image.split(',')[1]
+            const file = new Blob([Uint8Array.from(atob(base64Data), c => c.charCodeAt(0))], { type: 'image/jpeg' })
 
-        const { data, error } = await supabase.storage
-            .from('storage')
-            .upload(`previews/${fileName}.jpg`, file, { upsert: true })
+            const { data, error } = await supabase.storage
+                .from('storage')
+                .upload(`previews/${fileName}.jpg`, file, { upsert: true })
 
-        if (error) {
-            console.error('Error al subir imagen:', error)
+            if (error) {
+                console.error('Error al subir imagen:', error)
+                return ''
+            }
+
+            const { data: publicUrl } = supabase.storage
+                .from('storage')
+                .getPublicUrl(`previews/${fileName}.jpg`)
+
+            return publicUrl.publicUrl
+        } catch (error) {
+            console.error('Error in uploadPreviewToStorage:', error)
             return ''
         }
-
-        const { data: publicUrl } = supabase.storage
-            .from('storage')
-            .getPublicUrl(`previews/${fileName}.jpg`)
-
-        return publicUrl.publicUrl
         }
 
         const formatDuration = (seconds) => {
@@ -235,17 +308,18 @@
             </span>
             `
 
-
-        for (const item of items) {
+        // Procesar videos secuencialmente para evitar sobrecarga
+        for (let i = 0; i < items.length; i++) {
+            const item = items[i]
+            
             const div = document.createElement('div')
             div.className = 'related-item'
-            if (item.id == currentId) div.classList.add('active') // activarlo si es el actual
+            if (item.id == currentId) div.classList.add('active')
             relatedItemsRefs.push({ id: item.id, el: div })
 
             div.onclick = async () => {
                 history.replaceState(null, '', `${window.location.pathname}?program=${program}&current=${item.id}`)
 
-                // Actualizar video principal
                 videoElement.src = item.url_video
                 titleEl.innerText = item.name
                 await videoElement.play()
@@ -253,29 +327,28 @@
                 document.getElementById('mainInfo').innerHTML = `
                     <span>
                         <iconify-icon icon="mdi:clock-time-four-outline" style="font-size:13px;"></iconify-icon>
-                        Duración: ${formatDuration(currentItem.duration)}
+                        Duración: ${formatDuration(item.duration)}
                     </span>
                     <span>
                         <iconify-icon icon="mdi:arm-flex-outline" style="font-size:13px;"></iconify-icon>
-                        Dificultad: ${currentItem.dificult || 'N/A'}
+                        Dificultad: ${item.dificult || 'N/A'}
                     </span>
                     `
 
-                // Actualizar clases visuales
                 relatedItemsRefs.forEach(ref => {
                 ref.el.classList.toggle('active', ref.id == item.id)
                 })
             }
 
             const img = document.createElement('img')
-            img.style.background = '#000'
+            img.style.background = '#f0f0f0' // Fondo gris claro en lugar de negro
             img.alt = 'Preview'
 
             const texts = document.createElement('div')
             texts.className = 'related-texts'
             texts.innerHTML = `
             <div class="name">${item.name}</div>
-            <div class="duration">Cargando...</div>
+            <div class="duration">Generando preview...</div>
             `
 
             div.appendChild(img)
@@ -286,32 +359,51 @@
             let duration = item.duration
 
             if (!preview || !duration) {
-                const result = await getPreviewAndDuration(item.url_video)
-                preview = result.preview
-                duration = result.duration
+                console.log(`Processing video ${i + 1}/${items.length}: ${item.name}`)
+                
+                try {
+                    const result = await getPreviewAndDuration(item.url_video)
+                    preview = result.preview
+                    duration = result.duration
 
-                const fileName = `video_${item.id}`
-                let publicUrl = item.preview
+                    const fileName = `video_${item.id}`
+                    let publicUrl = item.preview
 
-                if (preview && preview.startsWith('data:image')) {
-                    publicUrl = await uploadPreviewToStorage(preview, fileName)
+                    if (preview && preview.startsWith('data:image')) {
+                        publicUrl = await uploadPreviewToStorage(preview, fileName)
 
-                    await supabase
-                    .from('class_virtual')
-                    .update({ preview: publicUrl, duration })
-                    .eq('id', item.id)
+                        await supabase
+                        .from('class_virtual')
+                        .update({ preview: publicUrl, duration })
+                        .eq('id', item.id)
 
-                    preview = publicUrl // <- ✅ Actualizá también la variable local
-                } else if (!duration && result.duration) {
-                    await supabase
-                    .from('class_virtual')
-                    .update({ duration })
-                    .eq('id', item.id)
+                        preview = publicUrl
+                    } else if (!duration && result.duration) {
+                        await supabase
+                        .from('class_virtual')
+                        .update({ duration })
+                        .eq('id', item.id)
+                    }
+                } catch (error) {
+                    console.error(`Error processing video ${item.name}:`, error)
+                    texts.querySelector('.duration').innerText = 'Error al procesar'
+                    continue
                 }
-                }
+            }
 
-            img.src = preview
+            if (preview) {
+                img.src = preview
+            } else {
+                img.style.background = '#ddd'
+                img.alt = 'Sin preview'
+            }
+            
             texts.querySelector('.duration').innerText = `Duración: ${formatDuration(duration)}`
+            
+            // Pequeña pausa entre procesamiento de videos
+            if (i < items.length - 1) {
+                await new Promise(resolve => setTimeout(resolve, 500))
+            }
         }
         }
 
